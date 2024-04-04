@@ -54,6 +54,8 @@ git clone https://github.com/alibaba/yalantinglibs.git
 cd yalantinglibs
 mkdir build
 cd build
+cmake .. -DCMAKE_PREFIX_PATH:PATH=D:\Work\3rd\install\Windows\x64\Debug -DCMAKE_INSTALL_PREFIX:PATH=D:\Work\3rd\install\Windows\x64\Debug -DYLT_ENABLE_SSL:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_BENCHMARK:BOOL=OFF -DBUILD_UNIT_TESTS:BOOL=OFF
+cmake --build . --config debug -j --target install
 ```
 
 2. build & test
