@@ -450,6 +450,35 @@ IGUANA_INLINE void from_xml(U &value, const View &view) {
   from_xml(value, std::begin(view), std::end(view));
 }
 
+template <typename It, typename Declaration, typename U, std::enable_if_t<attr_v<U>, int> = 0>
+IGUANA_INLINE void from_xml(Declaration &declaration, U &value, It &&it, It &&end) {
+  while (it != end) {
+    skip_sapces_and_newline(it, end);
+    match<'<'>(it, end);
+        auto declaration_start = it - 1;
+    if (*it == '?') {
+      skip_till<'>'>(it, end);
+      ++it;
+
+      declaration.emplace_back(std::string(declaration_start, it));
+    }
+    else {
+      break;
+    }
+  }
+  auto start = it;
+  skip_till_greater_or_space(it, end);
+  std::string_view key = std::string_view{&*start, static_cast<size_t>(std::distance(start, it))};
+  detail::parse_attr(value.attr(), it, end);
+  detail::parse_item(value.value(), it, end, key);
+}
+
+template <typename Declaration, typename U, typename View,
+          std::enable_if_t<string_container_v<View>, int> = 0>
+IGUANA_INLINE void from_xml(Declaration &declaration, U &value, const View &view) {
+  from_xml(declaration, value, std::begin(view), std::end(view));
+}
+
 template <typename Num, std::enable_if_t<num_v<Num>, int> = 0>
 IGUANA_INLINE Num get_number(std::string_view str) {
   Num num;

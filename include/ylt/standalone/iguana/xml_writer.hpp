@@ -79,6 +79,17 @@ IGUANA_INLINE void render_value(Stream &ss, const T &value) {
   }
 }
 
+template <bool pretty, size_t spaces, typename Stream, typename Declaration,
+          std::enable_if_t<container_v<Declaration>, int> = 0>
+inline void render_xml_declaration(Declaration &declaration, Stream &ss) {
+  for (auto &d : declaration) {
+    ss.append(d);
+    if constexpr (pretty) {
+      ss.push_back('\n');
+    }
+  }
+}
+
 template <bool pretty, size_t spaces, typename Stream, typename T,
           std::enable_if_t<map_container_v<T>, int> = 0>
 inline void render_xml_attr(Stream &ss, const T &value, std::string_view name) {
@@ -134,6 +145,15 @@ template <bool pretty, size_t spaces, typename Stream, typename T,
           std::enable_if_t<attr_v<T>, int> = 0>
 IGUANA_INLINE void render_xml_value(Stream &ss, const T &value,
                                     std::string_view name) {
+  render_xml_attr<pretty, spaces>(ss, value.attr(), name);
+  render_xml_value<pretty, spaces>(ss, value.value(), name);
+}
+
+template <bool pretty, size_t spaces, typename Stream, typename T, typename Declaration,
+          std::enable_if_t<attr_v<T>, int> = 0>
+IGUANA_INLINE void render_xml_value(Declaration &declaration, Stream &ss, const T &value,
+                                    std::string_view name) {
+  render_xml_declaration<pretty, spaces>(declaration, ss);
   render_xml_attr<pretty, spaces>(ss, value.attr(), name);
   render_xml_value<pretty, spaces>(ss, value.value(), name);
 }
@@ -202,6 +222,16 @@ IGUANA_INLINE void to_xml(T &&t, Stream &s) {
   constexpr std::string_view root_name = std::string_view(
       get_name<value_type>().data(), get_name<value_type>().size());
   render_xml_value<pretty, 0>(s, std::forward<T>(t), root_name);
+}
+
+template <bool pretty = false, typename Stream, typename T, typename Declaration,
+          std::enable_if_t<attr_v<T>, int> = 0>
+IGUANA_INLINE void to_xml(Declaration &declaration, T &&t, Stream &s) {
+  using value_type = typename std::decay_t<T>::value_type;
+  static_assert(refletable_v<value_type>, "value_type must be refletable");
+  constexpr std::string_view root_name = std::string_view(
+      get_name<value_type>().data(), get_name<value_type>().size());
+  render_xml_value<pretty, 0>(declaration, s, std::forward<T>(t), root_name);
 }
 
 template <bool pretty = false, typename Stream, typename T,
